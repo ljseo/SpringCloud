@@ -4,11 +4,34 @@ server:
 spring:
   application:
     name: user-service
+#  h2:
+#    console:
+#      enabled: true
+#      settings:
+#        web-allow-others: true #외부에서 접속을 허용
+#      path: /h2-console #웹브라우저에서 접속하려는 h2주소 (자유롭게 작성가능) 지금은 일반적인 이름을 적음
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
 eureka:
   instance:
-    instance-id: ${spring.cloud.client.hostname}:${springapplication.instance_id:${random.value}}
+    instance-id: ${spring.application.name}:${springapplication.instance_id:${random.value}}
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
       defaultZone: http://127.0.0.1:8761/eureka
+
+greeting:
+  message: Welcome to th Simple E-commerce.
