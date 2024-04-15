@@ -1,6 +1,7 @@
 package com.example.userservice.security;
 
 import com.example.userservice.service.UserService;
+import jakarta.servlet.Filter;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,17 +45,35 @@ public class WebSecurity {
 
     @Bean
     protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder authenticationManagerBuilder =
+                http.getSharedObject(AuthenticationManagerBuilder.class);
+//        authenticationManagerBuilder.userDetailsService(userService).passwordEncoder(bCryptPasswordEncoder);
 
+        AuthenticationManager authenticationManager = authenticationManagerBuilder.build();
 
-        http.csrf( (csrf) -> csrf.disable())
+        http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/users/**").permitAll()
-                        .requestMatchers(PathRequest.toH2Console()).permitAll()
-                        .requestMatchers("/**").permitAll());
-
+//                        .requestMatchers("/users/**").permitAll()
+//                        .requestMatchers(PathRequest.toH2Console()).permitAll()
+//                        .requestMatchers("/**").permitAll());
+                                .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
+//                        .requestMatchers("/**").access(this::hasIpAddress)
+                                .requestMatchers("/**").access(
+                                        new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('172.30.1.48')"))
+                                .anyRequest().authenticated()
+                )
+//                .authenticationManager(authenticationManager)
+                .sessionManagement((session) -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http.addFilter(getAuthenticationFilter(authenticationManager));
 
         http.headers((headers) -> headers.frameOptions((frameOptions) -> frameOptions.sameOrigin()));
 
         return http.build();
     }
+
+    private AuthenticationFilter getAuthenticationFilter(AuthenticationManager authenticationManager) throws Exception {
+        return new AuthenticationFilter(authenticationManager, userService, env);
+    }
+
 }
